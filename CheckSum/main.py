@@ -13,6 +13,6 @@ for idx in range(int(sys.argv[1])):
     checksum = checksum + data
     f.write("%02X," % data)
 
-checksum = ((checksum &0xFF)+0x01)&0xFF
+checksum = ((~(checksum &0xFF))+0x01)&0xFF
 f.write("%02X" % checksum)
 f.close()
