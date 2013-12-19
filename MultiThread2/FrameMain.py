@@ -20,71 +20,72 @@ class CountEvent(wx.PyCommandEvent):
 			"""
 			return self._value
 
+class CountingThread(threading.Thread):
+		def __init__(self, parent):
+			"""
+			@param parent: The GUI object that should receive the value
+			 """
+			threading.Thread.__init__(self)
+			self._parent = parent
+			self._break  = False
+			self._stop   = False
+
+		def run(self):
+			"""Overrides Thread.run. Don't call this directly its called internally
+			when you call Thread.start().
+			"""
+			while(not self._stop):
+				while(not self._break and not self._stop):
+					time.sleep(2)
+					self._value = 2
+					evt = CountEvent(myEVT_COUNT, -1, self._value)
+					wx.PostEvent(self._parent, evt)
+				
+				while(self._break and not self._stop):
+					time.sleep(1)
+
 # Implementing Main
 class FrameMain( FrameMainBase.Main ):
 	def __init__( self, parent ):
 		FrameMainBase.Main.__init__( self, parent )
+		self.m_btn_Run.Enable()
 		self.Bind(EVT_COUNT, self.OnCount)
-		self._break = True
-		self._stop = True
-		self._break_done = True
-		self._stop_done = True
-		self.worker = None
+		self.worker = CountingThread(self)
+		self.worker.start()		
 
 	def __del__(self):
-		self._break = True
-		self._stop = True
-		while(not self._stop_done):
-			time.sleep(0.5)
-	# Handlers for Main events.
-	def OnCloseWindow( self, event ):
-		self._break = True
-		self._stop = True
-		while(not self._stop_done):
+		self.worker._break = True
+		self.worker._stop = True
+		while(self.worker.is_alive()):
 			time.sleep(0.5)		
-		self.Destroy()
-		pass
-	
+	# Handlers for Main events.
 	def OnBtnRun_Click( self, event ):
 		# TODO: Implement OnBtnRun_Click
-		self._break = False
-		if(self._stop):
-			self._stop = False
-			self.worker = threading.Thread(target = self._doAdd, args = (), name = 'thread-Add').start()
+		self.m_btn_Run.Disable()
+		val = int(self.m_staticText.GetLabel()) + 1
+		self.m_staticText.SetLabel(unicode(val))
+		self.worker._break = False
+		self.worker._stop = False
+		self.m_btn_Run.Enable()
 		pass
 
 	def OnBtnBreak_Click( self, event ):
-		self._break = True
-		while(not self._break_done):
-			time.sleep(0.5)		
+		self.worker._break = True
 		pass
 	
 	def OnBtnStop_Click( self, event ):
-		self._stop = True
-		while(not self._stop_done):
+		self.worker._stop = True
+		while(self.worker.is_alive()):
 			time.sleep(0.5)
 		pass
 			
 	def OnCount( self, event ):
 		val = int(self.m_staticText.GetLabel()) + event.GetValue()
 		self.m_staticText.SetLabel(unicode(val))
-	
-	def _doAdd( self ):
-		self._stop_done = False	
-		while(not self._stop):
-			self._break_done = False
-			while(not self._break and not self._stop):
-				time.sleep(2)
-				evt = CountEvent(myEVT_COUNT, -1, 2)
-				wx.PostEvent(self, evt)
-			self._break_done = True	
-			while(self._break and not self._stop):
-				time.sleep(1)
-					
-		self._stop_done = True	
+			
 if __name__=='__main__':
 	app = wx.App()
 	my_frame = FrameMain(None)
 	my_frame.Show()
-	app.MainLoop()
+	app.MainLoop()	
 	del app
