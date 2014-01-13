@@ -16,3 +16,11 @@ print t
 print "0x%X" % t
 print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(t))
 print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(t+86400))
+t = time.strptime("2013-12-25", '%Y-%m-%d')
+print t
+tt = time.mktime(t)
+print "tt/86400=%d,0x%x" % (int(tt/86400),int(tt/86400))
+print "tt/86400=" , tt/86400
+print "tt=%d,0x%x" % (tt,tt)
+tt = 0xFFFFFFFF
+print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(tt))
