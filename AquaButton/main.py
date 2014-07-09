@@ -82,7 +82,11 @@ class MyAquaButton(AB.AquaButton):
 
         gc.SetFont(font)
         label = self.GetLabel()
-        tw, th = gc.GetTextExtent(label)
+        if not label:
+            tw = 0
+            th = 0
+        else:
+            tw, th = gc.GetTextExtent(label)
 
         if self._bitmap:
             bw, bh = self._bitmap.GetWidth(), self._bitmap.GetHeight()
@@ -106,7 +110,9 @@ class MyAquaButton(AB.AquaButton):
             pos_y = pos_y + 2   # extra spacing from bitmap
         
         # Create a Path to draw the text
-        gc.DrawText(label, (width-tw-shadowOffset)/2+btnOffset, pos_y + bw + btnOffset)      # draw the text
+        #dc.DrawLine((width-tw-shadowOffset)/2+btnOffset, pos_y + bw + btnOffset,(width-tw-shadowOffset)/2+btnOffset+tw, pos_y + bw + btnOffset)
+        if label:
+            gc.DrawText(label, (width-tw-shadowOffset)/2+btnOffset, pos_y + bw + btnOffset)      # draw the text
         #'''
         if self._saveBitmap:
             # Save the bitmap using wx.MemoryDC for later use
@@ -127,7 +133,8 @@ class MyAquaButton(AB.AquaButton):
 
             gcMemory.SetFont(font)
             #gcMemory.DrawText(label, pos_x + bw + btnOffset, (height-th-shadowOffset)/2+btnOffset)
-            gcMemory.DrawText(label, (width-tw-shadowOffset)/2+btnOffset, pos_y + bw + btnOffset)
+            if label:
+                gcMemory.DrawText(label, (width-tw-shadowOffset)/2+btnOffset, pos_y + bw + btnOffset)
 
             memory.SelectObject(wx.NullBitmap)
             self._storedBitmap = self._storedBitmap.ConvertToImage()
@@ -142,13 +149,17 @@ class MyAquaButton(AB.AquaButton):
         """
 
         label = self.GetLabel()
-        if not label:
-            return wx.Size(112, 48)
+        #if not label:
+        #    return wx.Size(112, 48)
 
         dc = wx.ClientDC(self)
         dc.SetFont(self.GetFont())
-        retWidth, retHeight = dc.GetTextExtent(label)
-
+        if not label:
+            retWidth  = 0 
+            retHeight = 0
+        else:
+            retWidth, retHeight = dc.GetTextExtent(label)
+        
         bmpWidth = bmpHeight = 0
         constant = 24
         if self._bitmap:
@@ -180,6 +191,10 @@ class MyFrame ( wx.Frame ):
         self.btn1 = MyAquaButton(self, wx.ID_ANY, Preference_Urban.GetBitmap(), "AquaButton")
         self.btn1.SetForegroundColour(wx.BLACK)        
         h=0
+        self.m_ButtonText = wx.TextCtrl( self, wx.ID_ANY, self.btn1.GetLabel(), wx.DefaultPosition, wx.DefaultSize, wx.TE_PROCESS_ENTER )
+        gbSizer.Add( wx.StaticText( self, wx.ID_ANY, "Button Label"), wx.GBPosition( h, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+        gbSizer.Add( self.m_ButtonText                              , wx.GBPosition( h, 2 ), wx.GBSpan( 1, 2 ), wx.ALL|wx.EXPAND, 5 )
+        h +=1
         for attr in ColorList:
             setattr(self, "m_"+attr, wx.ColourPickerCtrl(self , col=getattr(self.btn1,"Get"+attr)()))
             gbSizer.Add( wx.StaticText( self, wx.ID_ANY, attr), wx.GBPosition( h, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
@@ -218,6 +233,7 @@ class MyFrame ( wx.Frame ):
         self.m_PointSize.Bind(wx.EVT_TEXT_ENTER  , self.OnChoice)
         self.m_FaceName.Bind(wx.EVT_COMBOBOX    , self.OnChoice)
         self.m_FaceName.Bind(wx.EVT_TEXT_ENTER  , self.OnChoice)
+        self.m_ButtonText.Bind( wx.EVT_TEXT, self.OnText )
         self.OnCheck(None)
     def OnPickColour(self, event):
         for attr in ColorList:
@@ -231,6 +247,11 @@ class MyFrame ( wx.Frame ):
         ft.SetPointSize(int(self.m_PointSize.GetValue()))
         ft.SetFaceName(self.m_FaceName.GetValue())
         self.btn1.SetFont(ft)
+        self.btn1.Refresh()
+        self.Layout()
+        self.SetClientSize(self.GetEffectiveMinSize())
+    def OnText(self, event):
+        self.btn1.SetLabel(self.m_ButtonText.GetValue())
         self.btn1.Refresh()
         self.Layout()
         self.SetClientSize(self.GetEffectiveMinSize())
